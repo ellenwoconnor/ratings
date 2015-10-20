@@ -53,9 +53,11 @@ def load_movies():
         released_at = split_row[2]
         imdb_url = split_row[4]
 
-        title.rstrip("()1234567890")
+        title = title.rstrip("()1234567890")
+        title = title.rstrip()
 
-        released_at = datetime.strptime(released_at, "%d-%b-%Y")
+        if len(released_at) == 11:
+            released_at = datetime.strptime(released_at, "%d-%b-%Y")
 
         if title != "unknown":
             movie = Movie(movie_id=movie_id,
@@ -80,7 +82,8 @@ def load_ratings():
         row = row.rstrip()
 
         # TODO: Split on whitespace; no pipes are present in data file. (Take another look.)
-        user_id, movie_id, score, timestamp = row.split("|")
+        user_id, movie_id, score, timestamp = row.split()
+        timestamp = datetime.fromtimestamp(float(timestamp))
 
         rating = Rating(user_id=user_id, movie_id=movie_id, score=score, 
                         timestamp=timestamp)
