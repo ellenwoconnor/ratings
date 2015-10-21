@@ -81,14 +81,20 @@ def load_ratings():
     for row in open('seed_data/u.data'):
         row = row.rstrip()
 
-        # TODO: Split on whitespace; no pipes are present in data file. (Take another look.)
         user_id, movie_id, score, timestamp = row.split()
         timestamp = datetime.fromtimestamp(float(timestamp))
 
-        rating = Rating(user_id=user_id, movie_id=movie_id, score=score, 
-                        timestamp=timestamp)
+### TODO
+### This is not working!
+### We're trying to check if the movie referenced by a rating exists.
 
-        db.session.add(rating)
+        check_movie = Movie.query.filter_by(movie_id=movie_id).count()
+        if check_movie != 0:
+
+            rating = Rating(user_id=user_id, movie_id=movie_id, score=score, 
+                            timestamp=timestamp)
+
+            db.session.add(rating)
 
     db.session.commit()
 

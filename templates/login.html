@@ -1,0 +1,24 @@
+<!doctype html>
+<html>
+<head>
+  <title>Login</title>
+</head>
+
+<body>
+  Login
+  <hr>
+
+  {% block content %} 
+  <form action='/login-success' method="POST">Email: 
+    <label for='email'>
+        <input type='text' name='email'>
+    </label>Password: 
+    <label for='password'>    
+        <input type='text' name='password'>
+    </label> 
+        <input type='submit' value='Log in!'>
+  </form>
+  {% endblock %}
+
+</body>
+</html>
