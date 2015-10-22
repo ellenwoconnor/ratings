@@ -9,7 +9,7 @@
     <ul>
       {% for rating in ratings %}
           <li>
-              <a href="/movie/{{ rating.movie_id }}">
+              <a href="/movies/{{ rating.movie_id }}">
                 {{ rating.movie.title }}: {{ rating.score }}
               </a>
           </li>

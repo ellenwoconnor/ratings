@@ -88,15 +88,21 @@ def load_ratings():
 ### This is not working!
 ### We're trying to check if the movie referenced by a rating exists.
 
-        check_movie = Movie.query.filter_by(movie_id=movie_id).count()
-        if check_movie != 0:
+        # check_movie = Movie.query.filter_by(movie_id=movie_id).count()
+        # if check_movie != 0:
 
-            rating = Rating(user_id=user_id, movie_id=movie_id, score=score, 
-                            timestamp=timestamp)
+        rating = Rating(user_id=user_id, movie_id=movie_id, score=score, 
+                        timestamp=timestamp)
 
-            db.session.add(rating)
+        db.session.add(rating)
 
     db.session.commit()
+
+
+### Potential solution, not working
+
+# def clean_data():
+#     bad_data = db.session.query(Rating).filter(Rating.movie.movie_id is NULL).all()
 
 if __name__ == "__main__":
     connect_to_db(app)
