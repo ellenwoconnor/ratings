@@ -2,6 +2,7 @@
 
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+import correlation
 
 # This is the connection to the SQLite database; we're getting this through
 # the Flask-SQLAlchemy helper library. On this, we can find the `session`
@@ -29,6 +30,64 @@ class User(db.Model):
 
         return "<User user_id={} email={} age={} zipcode={}>".format(self.user_id, self.email, self.age, self.zipcode)
 
+    def similarity(self, another_user):
+        """Return Pearson rating for another user, as compared to self."""
+
+        my_ratings = {}
+        paired_ratings = []
+
+        for rating in self.ratings:
+            my_ratings[rating.movie_id] = rating
+
+        for other_rating in another_user.ratings:
+            my_rating = my_ratings.get(other_rating.movie_id)
+            if my_rating:
+                paired_ratings.append( (my_rating.score, 
+                                        other_rating.score) )
+
+        if paired_ratings:
+            return correlation.pearson(paired_ratings)
+
+        else:
+            return 0.0
+
+    def predict_rating(self, movie_id):
+        """ Make a prediction for user's rating of the movie. """
+
+        # Get all of the ratings objects for this movie ID 
+        all_ratings = movie_id.ratings
+        # Find all of the user objects for users who rated this movie 
+        all_users = [ rating.user for rating in all_ratings ]
+
+        # Calculate my similarity to all of the other users who rated this movie
+        similarities = [
+            (self.similarity(other_user), other_user)
+            for other_user in all_users]
+
+        # Sort the list of tuples by similarity score, so that the best matching users are 
+        # at the top of the list. 
+        # Then, get all of the best matches to us. 
+        similarities.sort(reverse=True)
+        top_match = similarities[0]
+        other_top_matches = [element[1].user_id for element in similarities if element[0] == top_match[0]]
+        highest_similarity = top_match[0]
+
+        # print "\n"
+        # print "\n"
+        # print similarities
+        # print "\n"
+        # print "\n"
+        # print "Similarities[0]: ", top_match
+        # print "Top match user: ", top_match_user
+        # print "Top similarity: ", highest_similarity
+
+        rating_list = []
+
+        for rating in all_ratings:
+            if rating.user_id in other_top_matches:
+                rating_list.append(rating.score)
+
+        return (sum(rating_list) / float(len(rating_list))) * highest_similarity
 
 # Put your Movie and Rating model classes here.
 
@@ -69,8 +128,11 @@ class Movie(db.Model):
         return "<Movie movie_id={} title={} released_at={}>".format(self.movie_id, self.title, self.released_at)
 
 
+
 ##############################################################################
 # Helper functions
+
+
 
 def connect_to_db(app):
     """Connect the database to our Flask app."""

@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block content %}
+
+    <h2>Movie #{{ movie_id }}</h2>
+
+    <p>Title: {{ title }}</p>
+    <p>IMDB Link: {{ imdb_url }}</p>
+    <p>Released on: {{ released_at }}</p>
+
+    <p>Average rating: <b>{{ avg_rating }}</b></p>
+    {% if prediction %}
+        <p>We predict you'll rate this movie <b>{{ prediction }}</b>. {{ beratement }} give this movie a <b>{{ eye_rating }}</b>.</p>
+    {% elif effective_rating %}
+        <p>You rated this movie <b>{{ effective_rating }}</b>. {{ beratement }} give this movie a <b>{{ eye_rating }}</b>.</p>
+    {% endif %}
+
+{% if session['email'] %}
+
+    <form action='/rating_success' method="POST">Rate this movie! 
+        <input type='hidden' name='movie_id' value="{{ movie_id }}">
+
+    <label for='rating'>
+        <input type='radio' name='rating' value="1">1
+        <input type='radio' name='rating' value="2">2
+        <input type='radio' name='rating' value="3">3
+        <input type='radio' name='rating' value="4">4
+        <input type='radio' name='rating' value="5">5  
+    </label>
+    
+        <input type='submit' value="Submit">
+    </form>
+
+{% endif %}
+
+    <ul>
+      {% for rating in ratings %}
+          <li>
+              <a href="/users/{{ rating.user_id }}">
+                User ID: {{ rating.user_id }}. Rating: {{ rating.score }}.
+              </a>
+          </li>
+      {% endfor %}
+    </ul>
+
+{% endblock %}

@@ -64,18 +64,90 @@ def user_profile(user_id):
 @app.route('/movies/<int:movie_id>')
 def movie_profile(movie_id):
     """Show information about a movie."""
+
+    # Get from database the movie object corresponding to movie id
     movie = Movie.query.filter_by(movie_id=int(movie_id)).one()
 
+    # If the user is logged in, get their user id 
+    if 'email' in session:
+        user_email = session.get('email')
+        user = User.query.filter_by(email=user_email).one()
+        user_id = user.user_id
+
+    # Gather the movie attributes 
     title = movie.title
     released_at = movie.released_at
     imdb_url = movie.imdb_url
     ratings = movie.ratings
 
+    # If user is logged in, get their rating (assigns user_rating 
+    # to none if no rating exists, or if the user is not logged in. 
+    if user_id:
+        user_rating = Rating.query.filter_by(
+            movie_id=movie_id, user_id=user_id).first()
+    else:
+        user_rating = None
+
+    # Get the other peoples' ratings for this movie and average them
+    rating_scores = [rating.score for rating in movie.ratings]
+    avg_rating = float(sum(rating_scores)) / len(rating_scores)
+
+    # Initialize prediction to None
+    prediction = None
+
+    # If logged in but hasn't rated, provide a predicted score 
+    if (not user_rating) and user_id:
+        user = User.query.get(user_id)
+        if user:
+            prediction = user.predict_rating(movie)
+
+    # Check whether there is a predicted or actual rating for the user and
+    # assign that to "effective_rating"
+    if prediction: 
+        effective_rating = prediction
+    elif user_rating:
+        effective_rating = user_rating.score
+    else:
+        effective_rating = None
+
+    # Get the eye's rating. If it doesn't exist, predict it. 
+    the_eye = User.query.filter_by(email="the-eye@judgment.com").one()
+    eye_rating = Rating.query.filter_by(
+        user_id=the_eye.user_id, movie_id=movie.movie_id).first()
+
+    if eye_rating is None:
+        eye_rating = the_eye.predict_rating(movie)
+    else:
+        eye_rating = eye_rating.score
+
+    # If there are ratings for the eye, and existing or predicted 
+    # ratings for the user, get the difference between the two
+    if eye_rating and effective_rating:
+        difference = abs(eye_rating - effective_rating)
+    else:
+        difference = None
+
+    BERATEMENT_MESSAGES = ["Glad you've got the exquisite taste to",
+        "If you had any sense, you'd",
+        "Is THAT how your mother raised you? You better",
+        "I'm never speaking to you again unless you",
+        "I'm deactivating your account unless you"
+    ]
+
+    if difference is not None:
+        beratement = BERATEMENT_MESSAGES[int(difference)]
+
+
     return render_template("movie_profile.html", movie_id=movie_id,
                                                 title=title, 
                                                 imdb_url=imdb_url,
                                                 released_at=released_at,
-                                                ratings=ratings)
+                                                ratings=ratings,
+                                                avg_rating=avg_rating,
+                                                prediction=prediction,
+                                                eye_rating=eye_rating,
+                                                beratement=beratement,
+                                                effective_rating=effective_rating)
 
 @app.route('/login')
 def login_page():
@@ -92,7 +164,7 @@ def login_success():
 
     user = db.session.query(User).filter(User.email == session['email']).first()
 
-    if user = None:
+    if user == None:
         flash("Wrong login info!")
 
     elif user.email == session['email'] and user.password == session['password']:
